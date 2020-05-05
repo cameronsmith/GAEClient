@@ -1,4 +1,5 @@
 cae-client-credentials.json
+deploy.json.dist
 .idea
 /vendor
 /.gae-output

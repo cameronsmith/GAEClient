@@ -10,7 +10,9 @@
   ],
   "require": {
     "php": ">=5.5.0",
-    "google/auth": "^1.8"
+    "ext-zip": "*",
+    "google/auth": "^1.8",
+    "google/cloud-storage": "^1.20"
   },
   "support": {
     "source": "https://github.com/uk-casmith/GAEClient"
@@ -20,7 +22,8 @@
       "UKCASmith\\GAEClient\\": "src/"
     },
     "classmap": [
-      "tests/"
+      "tests/",
+      "bin/Commands/"
     ]
   },
   "version": "0.0.1",

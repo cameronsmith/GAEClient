@@ -56,10 +56,11 @@ class Deploy
      * Upload source code.
      *
      * @param string $str_file_name
+     * @param $str_bucket
      */
-    protected function upload($str_file_name) {
+    protected function upload($str_file_name, $str_bucket) {
         $obj_storage = new StorageClient;
-        $obj_bucket = $obj_storage->bucket('alpine-comfort-273821.appspot.com');
+        $obj_bucket = $obj_storage->bucket($str_bucket);
         $obj_bucket->upload(
             fopen($str_file_name, 'r')
         );

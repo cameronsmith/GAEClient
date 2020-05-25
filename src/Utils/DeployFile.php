@@ -71,7 +71,7 @@ class DeployFile
      * @return array
      * @throws CannotLocateDeployFile
      */
-    public function getDeploySettings()
+    public static function getDeploySettings()
     {
         $str_deploy_file = getcwd() . DIRECTORY_SEPARATOR . 'deploy.local.json';
         if (file_exists($str_deploy_file)) {

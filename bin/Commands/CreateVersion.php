@@ -3,14 +3,10 @@
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use UKCASmith\GAEClient\Client;
-use UKCASmith\GAEClient\Requests\Version;
-use UKCASmith\GAEClient\Compress\Files\IgnoreFolderDots;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use UKCASmith\GAEClient\Compress\Factory;
-use Google\Cloud\Storage\StorageClient;
 use UKCASmith\GAEClient\Services\Deploy;
 use UKCASmith\GAEClient\Utils\DeployFile;
 
@@ -33,10 +29,15 @@ class CreateVersion extends Command
     {
         $this
             ->setDescription('Creates a new app engine version of an application.')
-            ->setHelp('This command allows you to create an app engine application version.');
+            ->setHelp('This command allows you to create an app engine application version going directly through GAE.');
 
         $this->addArgument('deployment type', InputArgument::REQUIRED, 'deployment type');
-        $this->addArgument('label', InputArgument::REQUIRED, 'version label');
+        $this->addOption(
+            'label',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'custom label you want to provide.'
+        );
     }
 
     /**
@@ -51,12 +52,16 @@ class CreateVersion extends Command
         $this->obj_io = new SymfonyStyle($obj_input, $obj_output);
         $this->obj_io->title('Creating GAE Version');
 
-        $arr_deploy_json = DeployFile::getDeploySettings();
         $str_environment = $obj_input->getArgument('deployment type');
+        $str_label = $obj_input->getOption('label');
 
         try {
+            $arr_deploy_json = DeployFile::getDeploySettings();
+            $str_default_label = $arr_deploy_json[$str_environment]['version'];
+            $str_deployment_label = (empty($str_label) ? $str_default_label : $str_label);
+
             $obj_question = new ConfirmationQuestion(
-                'Please confirm you wish to deploy to ' . $str_environment,
+                'Please confirm you wish to deploy to ' . $str_environment . ' ' . $str_deployment_label,
                 true
             );
 
@@ -66,7 +71,10 @@ class CreateVersion extends Command
             }
 
             $obj_deploy = new Deploy;
-            $obj_generator = $obj_deploy->process($arr_deploy_json, $str_environment, true);
+            $obj_generator = $obj_deploy
+                ->setCustomLabel($str_deployment_label)
+                ->process($arr_deploy_json, $str_environment);
+
             foreach ($obj_generator as $int_status) {
                 $this->writeStatus($int_status);
             }

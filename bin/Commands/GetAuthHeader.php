@@ -5,6 +5,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use UKCASmith\GAEClient\Requests\Auth;
 
 class GetAuthHeader extends Command
 {
@@ -23,37 +24,22 @@ class GetAuthHeader extends Command
     {
         $this
             ->setDescription('Gets the Authorization header for a google request which is useful for postman.')
-            ->setHelp('This command allows you to create an app engine application version.');
-
-        $this->addArgument('label', InputArgument::REQUIRED, 'version label');
-
-        $this->addOption(
-            'file',
-            null,
-            InputArgument::OPTIONAL,
-            'optionally specify the deploy.json file to use.');
+            ->setHelp('
+            This command allows you to the authorization header used on google requested. This 
+            can be useful when you want to create a request within postman and require an authorization token.');
     }
 
     protected function execute(InputInterface $obj_input, OutputInterface $obj_output)
     {
         $this->obj_io = new SymfonyStyle($obj_input, $obj_output);
-        $this->obj_io->title('Creating GAE Version');
-        //$obj_io->section('Adding a User');
+        $this->obj_io->title('Gettting Google OAuth Header');
 
-        $this->getDeployFile($obj_input->getOption('file'));
+
+        $obj_auth = new Auth;
+        $this->obj_io->writeln('Authorization: <info>' . $obj_auth->execute() . '</info>');
+        $this->obj_io->newLine(2);
+        $this->obj_io->writeln('Please note this authorization token will only last a limited period of time.');
 
         return 0;
-    }
-
-    protected function getDeployFile($str_filename) {
-        $str_deploy_file = (!empty($str_filename)) ? $str_filename : getcwd() . DIRECTORY_SEPARATOR . 'deploy.json';
-
-        if (!file_exists($str_deploy_file)) {
-            $this->obj_io->error([
-                'Cannot locate deploy.json file within your current working directory.',
-                'For more information please refer to https://github.com/uk-casmith/GAEClient to learn how to creating deploy.json files.'
-            ]);
-            exit(1);
-        }
     }
 }

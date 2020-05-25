@@ -12,6 +12,7 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use UKCASmith\GAEClient\Compress\Factory;
 use Google\Cloud\Storage\StorageClient;
 use UKCASmith\GAEClient\Services\Deploy;
+use UKCASmith\GAEClient\Utils\DeployFile;
 
 class CreateVersion extends Command
 {
@@ -25,6 +26,9 @@ class CreateVersion extends Command
      */
     protected $obj_io;
 
+    /**
+     * Configure bin script.
+     */
     protected function configure()
     {
         $this
@@ -35,12 +39,19 @@ class CreateVersion extends Command
         $this->addArgument('label', InputArgument::REQUIRED, 'version label');
     }
 
+    /**
+     * Execute.
+     *
+     * @param InputInterface $obj_input
+     * @param OutputInterface $obj_output
+     * @return int
+     */
     protected function execute(InputInterface $obj_input, OutputInterface $obj_output)
     {
         $this->obj_io = new SymfonyStyle($obj_input, $obj_output);
         $this->obj_io->title('Creating GAE Version');
 
-        $arr_deploy_json = $this->getDeployFile();
+        $arr_deploy_json = DeployFile::getDeploySettings();
         $str_environment = $obj_input->getArgument('deployment type');
 
         try {
@@ -56,22 +67,27 @@ class CreateVersion extends Command
 
             $obj_deploy = new Deploy;
             $obj_generator = $obj_deploy->process($arr_deploy_json, $str_environment, true);
-            foreach($obj_generator as $int_result) {
-                switch($int_result) {
-                    case Deploy::STEPS_COMPRESS:
-                        $this->obj_io->write('Creating source file: ');
-                        break;
-                    case Deploy::STEPS_UPLOAD:
-                        $this->obj_io->write('Uploading source file: ');
-                        break;
-                    case Deploy::STEPS_DEPLOY:
-                        $this->obj_io->write('Deploying: ');
-                        break;
-                    case Deploy::STEPS_SUCCESS:
-                        $this->obj_io->writeln('<info>OK</info>');
-                        break;
-                }
+            foreach ($obj_generator as $int_status) {
+                $this->writeStatus($int_status);
             }
+            $arr_response = $obj_generator->getReturn();
+
+            if (isset($arr_response['error'])) {
+                $arr_error = $arr_response['error'];
+                $this->obj_io->error('Failed to create version: ' . $arr_response['name']);
+                $this->obj_io->error('Code (' . $arr_error['code'] . '): ' . $arr_error['message']);
+                return 1;
+            }
+
+            $str_link = $arr_response['response']['versionUrl'];
+
+            $this->obj_io->newLine(2);
+            $this->obj_io->writeln('<info>The application has been successfully deployed.</info>');
+            $this->obj_io->writeln(
+                'You can visit the new application at <href=' . $str_link . '>' . $str_link . '</>'
+            );
+
+
         } catch (\Exception $obj_exception) {
             $this->obj_io->error($obj_exception->getMessage());
             return 1;
@@ -80,17 +96,27 @@ class CreateVersion extends Command
         return 0;
     }
 
-    protected function getDeployFile() {
-        $str_deploy_file = getcwd() . DIRECTORY_SEPARATOR . 'deploy.json';
-
-        if (!file_exists($str_deploy_file)) {
-            $this->obj_io->error([
-                'Cannot locate deploy.json file within your current working directory.',
-                'For more information please refer to https://github.com/uk-casmith/GAEClient to learn how to creating deploy.json files.'
-            ]);
-            exit(1);
+    protected function writeStatus($int_status)
+    {
+        switch ($int_status) {
+            case Deploy::STEPS_COMPRESS:
+                $this->obj_io->write('Creating source file: ');
+                break;
+            case Deploy::STEPS_UPLOAD:
+                $this->obj_io->write('Uploading source file: ');
+                break;
+            case Deploy::STEPS_DEPLOY:
+                $this->obj_io->write('Deploying: ');
+                break;
+            case Deploy::STEPS_CONFIRM:
+                $this->obj_io->write('Confirming: ');
+                break;
+            case Deploy::STEPS_SUCCESS:
+                $this->obj_io->writeln('<info>OK</info>');
+                break;
+            case Deploy::STEPS_FAILED:
+                $this->obj_io->writeln('<error>FAILED</error>');
+                break;
         }
-
-        return json_decode(file_get_contents($str_deploy_file), true);
     }
 }

@@ -116,6 +116,9 @@ class CreateVersion extends Command
             case Deploy::STEPS_DEPLOY:
                 $this->obj_io->write('Deploying: ');
                 break;
+            case Deploy::STEPS_CLEANUP:
+                $this->obj_io->write('Cleaning up: ');
+                break;
             case Deploy::STEPS_CONFIRM:
                 $this->obj_io->write('Confirming: ');
                 break;

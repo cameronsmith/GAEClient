@@ -18,6 +18,7 @@ class Deploy
     const STEPS_DEPLOY = 4;
     const STEPS_CONFIRM = 5;
     const STEPS_FAILED = 6;
+    const STEPS_CLEANUP = 7;
 
     /**
      * @var string
@@ -30,7 +31,8 @@ class Deploy
      * @param $str_label
      * @return $this
      */
-    public function setCustomLabel($str_label) {
+    public function setCustomLabel($str_label)
+    {
         $this->str_custom_label = $str_label;
         return $this;
     }
@@ -42,10 +44,12 @@ class Deploy
      * @param string $str_environment
      * @return \Generator
      */
-    public function process($arr_deploy_json, $str_environment) {
+    public function process($arr_deploy_json, $str_environment)
+    {
         $obj_deploy_file = new DeployFile($arr_deploy_json, $str_environment);
         $str_bucket = $obj_deploy_file->getRequired('bucket');
         $str_project = $obj_deploy_file->getRequired('project');
+        $arr_environments = $obj_deploy_file->getRequired('env');
         $str_version = !empty($this->str_custom_label) ? $this->str_custom_label : $obj_deploy_file->getRequired('version');
 
         yield static::STEPS_COMPRESS;
@@ -61,6 +65,7 @@ class Deploy
         $str_operation_id = $obj_version_request
             ->setProject($str_project)
             ->setVersion($str_version)
+            ->setEnvironmentVariables($arr_environments)
             ->setBucket($str_bucket)
             ->setSourceZip(basename($str_file_name))
             ->execute();
@@ -70,6 +75,10 @@ class Deploy
         $obj_status_request
             ->setProject($str_project)
             ->setOperation($str_operation_id);
+
+        yield static::STEPS_CLEANUP;
+        unlink($str_file_name);
+        yield static::STEPS_SUCCESS;
 
         yield static::STEPS_CONFIRM;
         $arr_response = $this->checkStatus($obj_status_request);
@@ -84,29 +93,23 @@ class Deploy
     }
 
     /**
-     * @param Status $obj_status_request
-     * @return Status
-     */
-    protected function checkStatus(Status $obj_status_request) {
-        $bol_complete = false;
-        while($bol_complete === false) {
-            $bol_complete = $obj_status_request->execute();
-            sleep(1);
-        }
-
-        return $obj_status_request->getResponse();
-    }
-
-    /**
      * Compress source code.
      *
      * @param string $str_path
      * @return string
      */
-    protected function compress($str_path) {
+    public function compress($str_path)
+    {
         $obj_compress = Factory::make(Factory::ZIP);
         $obj_files = new IgnoreFolderDots;
-        return $obj_compress->build($obj_files->get($str_path));
+        $str_filename = $obj_compress->build($obj_files->get($str_path));
+        $str_sha_name = sha1_file($str_filename);
+
+        $arr_path_parts = pathinfo($str_filename);
+        $str_new_path_file = $arr_path_parts['dirname'] . DIRECTORY_SEPARATOR . $str_sha_name . '.' . Factory::ZIP;
+        rename($str_filename, $str_new_path_file);
+
+        return $str_new_path_file;
     }
 
     /**
@@ -115,11 +118,27 @@ class Deploy
      * @param string $str_file_name
      * @param $str_bucket
      */
-    protected function upload($str_file_name, $str_bucket) {
+    public function upload($str_file_name, $str_bucket)
+    {
         $obj_storage = new StorageClient;
         $obj_bucket = $obj_storage->bucket($str_bucket);
         $obj_bucket->upload(
             fopen($str_file_name, 'r')
         );
+    }
+
+    /**
+     * @param Status $obj_status_request
+     * @return Status
+     */
+    protected function checkStatus(Status $obj_status_request)
+    {
+        $bol_complete = false;
+        while ($bol_complete === false) {
+            $bol_complete = $obj_status_request->execute();
+            sleep(1);
+        }
+
+        return $obj_status_request->getResponse();
     }
 }

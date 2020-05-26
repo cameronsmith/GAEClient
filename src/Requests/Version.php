@@ -16,6 +16,7 @@ class Version extends Request
     protected $bol_thread_safe = true;
     protected $str_bucket;
     protected $str_source_zip;
+    protected $arr_env = [];
 
     /**
      * ENDPOINT to call
@@ -49,6 +50,15 @@ class Version extends Request
      */
     public function setVersion($str_id) {
         $this->str_id = $str_id;
+        return $this;
+    }
+
+    /**
+     * @param array $arr_env
+     * @return $this
+     */
+    public function setEnvironmentVariables(array $arr_env) {
+        $this->arr_env = $arr_env;
         return $this;
     }
 
@@ -101,6 +111,7 @@ class Version extends Request
             'runtime' => $this->str_runtime,
             'runtimeApiVersion' => $this->str_runtime,
             'threadsafe' => $this->bol_thread_safe,
+            'envVariables' => (object) $this->arr_env,
             'deployment' => [
                 'zip' => [
                     'sourceUrl' => sprintf(static::SOURCE_ZIP_ENDPOINT, $this->str_bucket, $this->str_source_zip),

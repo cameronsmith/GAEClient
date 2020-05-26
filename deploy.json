@@ -2,11 +2,13 @@
   "alpha": {
     "project": "",
     "version": "",
-    "bucket": ""
+    "bucket": "",
+    "env": {}
   },
   "live": {
     "project": "",
     "version": "",
-    "bucket": ""
+    "bucket": "",
+    "env": {}
   }
 }

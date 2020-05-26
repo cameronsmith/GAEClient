@@ -12,7 +12,7 @@ class Zip
      * @param string $str_filename
      * @return string
      */
-    public function build(RecursiveIteratorIterator $obj_files, $str_filename = 'gae-output.zip') {
+    public function build(RecursiveIteratorIterator $obj_files, $str_filename = 'gae-tmp-output.zip') {
         $str_cwd = getcwd();
         $str_build_path = $str_cwd . DIRECTORY_SEPARATOR . '.gae-output';
 

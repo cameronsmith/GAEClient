@@ -1,10 +1,11 @@
 #!/usr/bin/env php
 <?php
-require __DIR__ .'/../vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
 
-define('VERSION', '1.0.0');
+$str_version = UKCASmith\GAEClient\Utils\Version::get();
+define('VERSION', $str_version);
 
 /**
  * Get credentials path.
@@ -15,12 +16,6 @@ define('VERSION', '1.0.0');
 function getCredentialsPath($str_file_name) {
     // current working directory.
     $str_credentials = getcwd() . DIRECTORY_SEPARATOR . $str_file_name;
-    if (file_exists($str_credentials)) {
-        return $str_credentials;
-    }
-
-    // directory above
-    $str_credentials = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . $str_file_name;
     if (file_exists($str_credentials)) {
         return $str_credentials;
     }
@@ -58,6 +53,7 @@ $obj_application = new Application('GAEClient', VERSION);
 // App
 $obj_application->add(new Initialize);
 $obj_application->add(new BuildImage);
+$obj_application->add(new Version);
 
 // Google
 $obj_application->add(new CreateVersion);

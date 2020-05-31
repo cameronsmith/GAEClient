@@ -49,6 +49,8 @@ class Deploy
         $obj_deploy_file = new DeployFile($arr_deploy_json, $str_environment);
         $str_bucket = $obj_deploy_file->getRequired('bucket');
         $str_project = $obj_deploy_file->getRequired('project');
+        $str_runtime = $obj_deploy_file->getRequired('runtime');
+
         $arr_environments = $obj_deploy_file->getRequired('env');
         $str_version = !empty($this->str_custom_label) ? $this->str_custom_label : $obj_deploy_file->getRequired('version');
 
@@ -65,6 +67,7 @@ class Deploy
         $str_operation_id = $obj_version_request
             ->setProject($str_project)
             ->setVersion($str_version)
+            ->setRuntime($str_runtime)
             ->setEnvironmentVariables($arr_environments)
             ->setBucket($str_bucket)
             ->setSourceZip(basename($str_file_name))

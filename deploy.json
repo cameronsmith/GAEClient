@@ -2,12 +2,14 @@
   "alpha": {
     "project": "",
     "version": "",
+    "runtime": "php55",
     "bucket": "",
     "env": {}
   },
   "live": {
     "project": "",
     "version": "",
+    "runtime": "php55",
     "bucket": "",
     "env": {}
   }

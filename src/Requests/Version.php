@@ -44,6 +44,11 @@ class Version extends Request
         return $this;
     }
 
+    public function setRuntime($str_runtime) {
+        $this->str_runtime = $str_runtime;
+        return $this;
+    }
+
     /**
      * @param $str_id
      * @return $this

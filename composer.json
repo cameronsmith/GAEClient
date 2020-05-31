@@ -2,7 +2,7 @@
   "name": "ukcasmith/gae-client",
   "description": "A Google App Engine client",
   "keywords" : ["google app engine", "app engine", "ukcasmith", "gae", "deploy"],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "authors": [
     {
       "name": "Cameron Smith"

@@ -97,7 +97,7 @@ class CreateVersion extends Command
 
 
         } catch (\Exception $obj_exception) {
-            $this->obj_io->error($obj_exception->getMessage());
+            $this->obj_io->error(get_class($obj_exception) . ':' . $obj_exception->getMessage());
             return 1;
         }
 

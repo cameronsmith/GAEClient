@@ -33,12 +33,14 @@ class DeployFile
      * Get required key.
      *
      * @param $str_key
+     * @param bool $bol_allow_empty
      * @return mixed
      * @throws MissingRequiredKey
      */
-    public function getRequired($str_key)
+    public function getRequired($str_key, $bol_allow_empty = false)
     {
-        if (!isset($this->arr_json[$this->str_environment][$str_key])) {
+        if (!isset($this->arr_json[$this->str_environment][$str_key])
+            || (!$bol_allow_empty && empty($this->arr_json[$this->str_environment][$str_key]))) {
             throw new MissingRequiredKey(
                 'Missing required key from deployment file: [' . $this->str_environment . '][' . $str_key . ']'
             );

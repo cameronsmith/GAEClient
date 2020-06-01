@@ -51,7 +51,7 @@ class Deploy
         $str_project = $obj_deploy_file->getRequired('project');
         $str_runtime = $obj_deploy_file->getRequired('runtime');
 
-        $arr_environments = $obj_deploy_file->getRequired('env');
+        $arr_environments = $obj_deploy_file->getRequired('env', true);
         $str_version = !empty($this->str_custom_label) ? $this->str_custom_label : $obj_deploy_file->getRequired('version');
 
         yield static::STEPS_COMPRESS;

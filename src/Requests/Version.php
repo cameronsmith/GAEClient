@@ -4,10 +4,15 @@ use UKCASmith\GAEClient\Exceptions\InvalidHttpResponse;
 use UKCASmith\GAEClient\Exceptions\InvalidHttpResponseCode;
 use UKCASmith\GAEClient\Exceptions\MissingRequestObject;
 use UKCASmith\GAEClient\Requests\Clients\GoogleRequestTrait;
+use UKCASmith\GAEClient\Exceptions\InvalidProperty;
 
 class Version extends Request
 {
     use GoogleRequestTrait;
+
+    const RUNTIME_PHP_5 = 'php55';
+    const RUNTIME_PHP_72 = 'php72';
+    const RUNTIME_PHP_73 = 'php73';
 
     protected $str_project;
     protected $str_id;
@@ -44,7 +49,26 @@ class Version extends Request
         return $this;
     }
 
+    /**
+     * Set run time.
+     *
+     * @param string $str_runtime
+     * @return $this
+     * @throws InvalidProperty
+     */
     public function setRuntime($str_runtime) {
+        if ($str_runtime !== static::RUNTIME_PHP_5
+            && $str_runtime !== static::RUNTIME_PHP_72
+            && $str_runtime !== static::RUNTIME_PHP_73
+        ) {
+            throw new InvalidProperty(
+                'You can only select a runtime version that is either: '
+                . static::RUNTIME_PHP_5 . ', '
+                . static::RUNTIME_PHP_72 . ', '
+                . static::RUNTIME_PHP_73
+            );
+        }
+
         $this->str_runtime = $str_runtime;
         return $this;
     }
@@ -96,8 +120,24 @@ class Version extends Request
         return $this->arr_scopes;
     }
 
+    /**
+     * @return string
+     */
     protected function getJsonPayload()
     {
+        if ($this->str_runtime === static::RUNTIME_PHP_5) {
+            return $this->getPhp5Payload();
+        }
+
+        return $this->getPhp7Payload();
+    }
+
+    /**
+     * Get PHP5 payload.
+     *
+     * @return string
+     */
+    protected function getPhp5Payload() {
         return json_encode([
             'id' => $this->str_id,
             'entrypoint' => [
@@ -115,6 +155,38 @@ class Version extends Request
             ],
             'runtime' => $this->str_runtime,
             'runtimeApiVersion' => $this->str_runtime,
+            'threadsafe' => $this->bol_thread_safe,
+            'envVariables' => (object) $this->arr_env,
+            'deployment' => [
+                'zip' => [
+                    'sourceUrl' => sprintf(static::SOURCE_ZIP_ENDPOINT, $this->str_bucket, $this->str_source_zip),
+                ]
+            ],
+        ], JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * Get PHP7 payload.
+     *
+     * @return string
+     */
+    protected function getPhp7Payload() {
+        return json_encode([
+            'id' => $this->str_id,
+            'entrypoint' => [
+                'shell' => ''
+            ],
+            'instanceClass' => $this->str_instance,
+            'handlers' => [
+                [
+                    'script' => [
+                        'scriptPath' => 'auto',
+                    ],
+                    'securityLevel' => 'SECURE_OPTIONAL',
+                    'urlRegex' => '.*',
+                ],
+            ],
+            'runtime' => $this->str_runtime,
             'threadsafe' => $this->bol_thread_safe,
             'envVariables' => (object) $this->arr_env,
             'deployment' => [
